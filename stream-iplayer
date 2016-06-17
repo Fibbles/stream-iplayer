@@ -1,0 +1,185 @@
+#!/bin/bash
+
+version="1.0"
+
+usage="A script to allow easy usage of get_iplayer's live streaming with VLC.
+
+$(basename "$0") [-h] [-l] [-v] [-r] [-c \"arg\"] [-q \"arg\"]
+
+	-h	Show this help text.
+
+	-l	Show the license.
+
+	-v	Show the version number.
+
+	-q	The quality of the stream. (OPTIONAL)
+		Available options are:
+		\"good\"
+		\"better\"
+		\"vbetter\"
+		\"best\"
+		\"default\"
+
+	-r	Set the channel as radio. (OPTIONAL)
+		Notifies the scipt that the channel is a radio channel.
+		Otherwise it is assumed the channel is a tv channel.
+
+	-c	The channel to stream. (REQUIRED)
+		The script accepts partial name matches and ignores case.
+		Available options are:
+
+		===TV===
+		\"BBC Alba\"
+		\"BBC Four\"
+		\"BBC News\"
+		\"BBC One Northern Ireland\"
+		\"BBC One Scotland\"
+		\"BBC One Wales\"
+		\"BBC One\"
+		\"BBC Parliament\"
+		\"BBC Three\"
+		\"BBC Two Northern Ireland\"
+		\"BBC Two Scotland\"
+		\"BBC Two Wales\"
+		\"BBC Two\"
+		\"CBBC\"
+		\"CBeebies\"
+		\"S4C\"
+
+		===RADIO===
+		\"BBC 1Xtra\"
+		\"BBC 5 live Sports Extra\"
+		\"BBC 6 Music\"
+		\"BBC Asian Network\"
+		\"BBC Berkshire\"
+		\"BBC Bristol\"
+		\"BBC Cambridgeshire\"
+		\"BBC Cornwall\"
+		\"BBC Coventry & Warwickshire\"
+		\"BBC Cumbria\"
+		\"BBC Derby\"
+		\"BBC Devon\"
+		\"BBC Essex\"
+		\"BBC Gloucestershire\"
+		\"BBC Guernsey\"
+		\"BBC Hereford & Worcester\"
+		\"BBC Humberside\"
+		\"BBC Jersey\"
+		\"BBC Kent\"
+		\"BBC Lancashire\"
+		\"BBC Leeds\"
+		\"BBC Leicester\"
+		\"BBC Lincolnshire\"
+		\"BBC London\"
+		\"BBC Manchester\"
+		\"BBC Merseyside\"
+		\"BBC Newcastle\"
+		\"BBC Norfolk\"
+		\"BBC Northampton\"
+		\"BBC Nottingham\"
+		\"BBC Oxford\"
+		\"BBC Radio 1\"
+		\"BBC Radio 2\"
+		\"BBC Radio 3\"
+		\"BBC Radio 4 Extra\"
+		\"BBC Radio 4 FM\"
+		\"BBC Radio 4 LW\"
+		\"BBC Radio 5 live\"
+		\"BBC Radio Cymru\"
+		\"BBC Radio Foyle\"
+		\"BBC Radio Nan Gaidheal\"
+		\"BBC Radio Scotland FM\"
+		\"BBC Radio Scotland MW\"
+		\"BBC Radio Ulster\"
+		\"BBC Radio Wales\"
+		\"BBC Sheffield\"
+		\"BBC Shropshire\"
+		\"BBC Solent\"
+		\"BBC Somerset\"
+		\"BBC Southern Counties\"
+		\"BBC Stoke\"
+		\"BBC Suffolk\"
+		\"BBC Sussex\"
+		\"BBC Swindon\"
+		\"BBC Tees\"
+		\"BBC Three Counties\"
+		\"BBC WM\"
+		\"BBC Wiltshire\"
+		\"BBC World Service\"
+		\"BBC York\""
+
+license="Copyright (c) 2016 Loren McGuckin
+
+Permission is hereby granted, free of charge, to any person obtaining a copy 
+of this software and associated documentation files (the \"Software\"), to 
+deal in the Software without restriction, including without limitation the 
+rights to use, copy, modify, merge, publish, distribute, sublicense, and/or 
+sell copies of the Software, and to permit persons to whom the Software is 
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in 
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, 
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN 
+THE SOFTWARE."
+
+channel=""
+quality="default"
+stream_type="livetv"
+
+printf "stream_iplayer %s, Copyright 2016 Loren McGuckin.\nDistributed under the MIT license.\n" "$version"
+
+while getopts ':hlvrc:q:' option; do
+  case "$option" in
+    h)	echo "$usage"
+		exit 0
+		;;
+    l)	echo "$license"
+		exit 0
+		;;
+    v)	printf "Version: %s\n" "$version"
+		exit 0
+		;;
+	r)	stream_type="liveradio"
+		;;
+	c)	channel=$OPTARG
+		;;
+    q)	quality=$OPTARG
+       	;;
+    :)	printf "Error: Missing argument for -%s\n" "$OPTARG" >&2
+      	echo "$usage" >&2
+      	exit 1
+      	;;
+   \?)	printf "Error: Illegal option: -%s\n" "$OPTARG" >&2
+      	echo "$usage" >&2
+      	exit 1
+      	;;
+  esac
+done
+shift $((OPTIND - 1))
+
+if !(command -v vlc >/dev/null 2>&1); then
+	echo "This script requires VLC but it is not installed. Aborting." >&2
+	exit 1
+fi
+
+if !(command -v get_iplayer >/dev/null 2>&1); then
+	echo "This script requires get_iplayer but it is not installed. Aborting." >&2
+	exit 1
+fi
+
+if [ -z "$channel" ]; then
+	echo "Error: No channel was specified." >&2
+  	echo "$usage" >&2
+  	exit 1
+fi
+
+get_iplayer --mode=$quality --stream --type=$stream_type "$channel" --player="vlc file:///dev/stdin --file-caching 5000 vlc://quit"
+
+exit $?
+
