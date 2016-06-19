@@ -12,4 +12,4 @@ Example usage:
 
 stream-iplayer -c "bbc one"
 
-stream-iplayer -r -c "radio 1"
+stream-iplayer -rc "radio 1"
